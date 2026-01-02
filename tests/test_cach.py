@@ -10,7 +10,6 @@ class Cache:
 
     def set(self, key, value):
         # BUG: accidentally clears the entire cache
-        self._store = {}
         self._store[key] = value
 
 def test_cache_get():
