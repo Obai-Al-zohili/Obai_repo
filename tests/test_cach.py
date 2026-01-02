@@ -4,7 +4,9 @@ class Cache:
 
     def get(self, key):
         # BUG: returns default even when key exists but value is falsy (0, "", False)
-        return self._store.get(key, None)
+        if key in self._store:
+            return self._store[key]
+        return None
 
     def set(self, key, value):
         # BUG: accidentally clears the entire cache
