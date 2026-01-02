@@ -5,9 +5,9 @@ import re
 from typing import Tuple
 
 def run_tests() -> Tuple[bool, str]:
-    """Run pytest and return (all_passed, output)."""
+    """Run pytest on all test files and return (all_passed, output)."""
     proc = subprocess.run(
-        [sys.executable, "-m", "pytest", "--maxfail=1", "--disable-warnings", "-q"],
+        [sys.executable, "-m", "pytest", "tests/", "--maxfail=1", "--disable-warnings", "-q"],
         capture_output=True,
         text=True
     )

@@ -11,13 +11,35 @@ def read_file(path: str) -> str:
         return f"/* error reading {path}: {e} */"
 
 def apply_patch(patch_text: str) -> bool:
-    with tempfile.NamedTemporaryFile("w", delete=False) as tf:
+    # Use git apply for all patches
+    with tempfile.NamedTemporaryFile("w", delete=False, suffix=".patch") as tf:
         tf.write(patch_text)
         tmpname = tf.name
-    proc = subprocess.run(["git", "apply", "--index", tmpname], capture_output=True, text=True)
-    if proc.returncode != 0:
-        print("git apply failed:", proc.stderr)
+    
+    try:
+        # Try to apply the patch
+        proc = subprocess.run(["git", "apply", "--index", tmpname], capture_output=True, text=True)
+        if proc.returncode != 0:
+            print("git apply failed:", proc.stderr)
+            print("Patch content:")
+            print(patch_text)
+            return False
+        
+        # Stage and commit the changes
+        subprocess.run(["git", "add", "-A"])
+        result = subprocess.run(["git", "commit", "-m", "Automated fix by LLM"], capture_output=True, text=True)
+        if result.returncode != 0:
+            print("Git commit failed:", result.stderr)
+            return False
+            
+        return True
+    except Exception as e:
+        print(f"Patch application failed: {e}")
         return False
-    subprocess.run(["git", "add", "-A"])
-    subprocess.run(["git", "commit", "-m", "Automated fix by LLM"])
-    return True
+    finally:
+        # Clean up temporary file
+        try:
+            import os
+            os.unlink(tmpname)
+        except:
+            pass

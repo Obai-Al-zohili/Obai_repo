@@ -26,7 +26,8 @@ def main():
         except Exception as e:
             print("Error calling LLM:", e)
             return
-        print("Patch obtained:\n", patch[:300], "…")
+        print("Patch obtained:")
+        print(patch)
         ok = apply_patch(patch)
         if not ok:
             print("Patch application failed; stopping.")
