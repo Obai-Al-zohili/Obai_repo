@@ -5,7 +5,7 @@ __pycache__/
 
 # C extensions
 *.so
-
+best_model.pt
 # Distribution / packaging
 .Python
 build/
