@@ -2,7 +2,7 @@
 __pycache__/
 *.py[codz]
 *$py.class
-
+best_model.pt
 # C extensions
 *.so
 best_model.pt

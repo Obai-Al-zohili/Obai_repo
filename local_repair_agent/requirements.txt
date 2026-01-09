@@ -1,0 +1,20 @@
+# Local Repair Agent Requirements
+
+# Core ML libraries
+torch>=1.9.0
+transformers>=4.20.0
+
+# Testing
+pytest>=6.0.0
+
+# Utilities (usually included with Python)
+# subprocess - built-in
+# tempfile - built-in
+# difflib - built-in
+# re - built-in
+# os - built-in
+# pathlib - built-in
+
+# Optional: For better performance
+# accelerate>=0.20.0  # Uncomment for faster model loading
+# bitsandbytes>=0.39.0  # Uncomment for memory optimization
