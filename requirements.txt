@@ -1,0 +1,58 @@
+# ============================================================
+# OffHand / Beemo — requirements.txt
+# Generated 2026-10-22
+#
+# Install:
+#   pip install -r requirements.txt
+#   OR (preferred, also installs the beemo CLI):
+#   pip install -e .
+#
+# Python: 3.12 recommended (3.11 also works)
+# ============================================================
+
+# ------------------------------------------------------------------
+# Core inference (Beemo CLI + evaluate.py)
+# ------------------------------------------------------------------
+transformers>=4.46          # model loading, tokenizer
+peft>=0.13                  # LoRA adapter loading (PeftModel)
+bitsandbytes>=0.44          # 4-bit quantization (BitsAndBytesConfig)
+accelerate>=1.0             # device_map="auto" support
+sentencepiece               # tokenizer backend for some models
+
+# ------------------------------------------------------------------
+# Training / fine-tuning  (fine-tuning_Kaggle.ipynb)
+# ------------------------------------------------------------------
+trl>=0.11                   # SFTTrainer
+datasets>=3.0               # CommitBench dataset loading (load_dataset)
+tqdm                        # progress bars in filter notebook
+
+# ------------------------------------------------------------------
+# Evaluation metrics  (evaluate.py, evaluate_ollama.py, evaluate_commitsuite.py)
+# ------------------------------------------------------------------
+evaluate                    # HuggingFace evaluate framework (loads sacrebleu, rouge)
+sacrebleu                   # corpus-level BLEU (evaluate.load("sacrebleu"))
+rouge-score                 # ROUGE-L            (evaluate.load("rouge"))
+nltk>=3.8                   # METEOR via nltk.translate.meteor_score + WordNet
+scikit-learn>=1.3           # per-type precision/recall/F1, confusion matrix
+matplotlib>=3.7             # confusion matrix PNG output
+seaborn>=0.12               # confusion matrix styling
+
+# ------------------------------------------------------------------
+# VS Code extension development  (vscode-extension/ — Node/TypeScript)
+# ------------------------------------------------------------------
+# These are JavaScript dependencies managed by npm, not pip.
+# Run inside vscode-extension/:
+#   npm install
+#   npm run compile
+# No pip packages needed for the extension itself.
+
+# ------------------------------------------------------------------
+# Notebook runtime  (Kaggle / Colab / local Jupyter)
+# ------------------------------------------------------------------
+jupyter                     # run notebooks locally (optional; Kaggle provides it)
+ipykernel                   # Jupyter kernel
+
+# ------------------------------------------------------------------
+# NLTK data (run once after installing nltk)
+# ------------------------------------------------------------------
+# python -c "import nltk; nltk.download('wordnet'); nltk.download('omw-1.4')"
