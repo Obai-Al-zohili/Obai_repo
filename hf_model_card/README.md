@@ -65,9 +65,14 @@ On 9,704 held-out CommitBench commits (full-precision model):
 | BLEU | 0.5 | **19.4** | |
 | ROUGE-L | 0.022 | **0.328** | |
 
-The 4-bit version scores the same within noise (200-example check). Type accuracy by type: `fix` 86%,
-`docs` 75%, `test` 73%, `chore` 38%, `feat` 36%, `refactor` 35%; `build`, `ci`, `perf`, `style` are rare
-in the data and rarely predicted.
+The 4-bit version scores the same within noise (200-example check).
+
+Per-type accuracy (fine-tuned): `fix` 86%, `docs` 75%, `test` 73%, `chore` 38%, `feat` 36%,
+`refactor` 35%; `build` 24%, `ci` 11%, `perf` 6%, `style` 7%. The rare types are under-represented
+in training data and are the main area for improvement.
+
+The evaluation scripts in `scripts/` also report METEOR, per-type precision/recall/F1, and a confusion
+matrix. Run `python scripts/evaluate_ollama.py --limit 200` with Ollama to reproduce.
 
 ## Limitations
 

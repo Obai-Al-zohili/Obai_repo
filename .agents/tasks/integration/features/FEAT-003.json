@@ -1,0 +1,31 @@
+{
+  "id": "FEAT-003",
+  "type": "feat",
+  "description": "CommitSuite evaluation script, model card fill-out, and README updates. Depends on FEAT-001 (which centralizes diff_utils utilities). Creates scripts/evaluate_commitsuite.py to run OffHand's model on CommitSuite's CMG eval dataset (1000 examples) via Ollama and report BLEU/ROUGE-L/METEOR/valid-format/type-accuracy. Fills out the blank model card. Updates README with new commands.",
+  "status": "pending",
+  "steps": [
+    "Step 1 — Read CommitSuite/CMG-eval_dataset/all_CMG.json to confirm its structure (url, hash, msg, message_type, description, modified_files[]{old_path, new_path, diff}, etc.) and verify the first few entries are valid for diff reconstruction.",
+    "Step 2 — Create scripts/evaluate_commitsuite.py. Base it on scripts/evaluate_ollama.py structure. Key differences: (a) Input is CommitSuite/CMG-eval_dataset/all_CMG.json (JSON array, not JSONL). (b) Diff reconstruction: for each entry, join all modified_files as 'diff --git a/{old_path} b/{new_path}\\n--- a/{old_path}\\n+++ b/{new_path}\\n{diff_hunk}\\n' (the diff field in CommitSuite is a raw hunk without the diff --git header; reconstruct it). Then call build_diff() from commit_model.diff_utils on the joined diff (same filtering as all other scripts). (c) Reference: use entry['description'] as the reference (the commit message body without the type prefix) — CommitSuite intentionally strips the type to avoid giving it away to tools. (d) Keep all metrics from evaluate_ollama.py: valid-format, type-acc, BLEU (sacrebleu), ROUGE-L, METEOR. (e) Add --dataset-path argument defaulting to 'CommitSuite/CMG-eval_dataset/all_CMG.json'. (f) Add --limit argument. (g) Write predictions to preds_commitsuite.jsonl in same format as preds_ollama.jsonl ({\"pred\": ..., \"ref\": ...}). (h) Print a note at top: 'Requires Ollama running with the commit-model model (ollama run commit-model)'. (i) Import TYPE_RE, VALID_RE, extract_type from commit_model.diff_utils (FEAT-001 must be complete first).",
+    "Step 3 — Fill out commit-model-lora/README.md. Replace ALL 'More Information Needed' placeholders with real content drawn from: results.md (evaluation metrics), adapter_config.json (training hyperparameters), fine-tuning_Kaggle.ipynb (training setup), CommitBench_filter.ipynb (data pipeline), plan.md and MVP.md (project description). Sections to fill: Model Description, Direct Use, Training Data (CommitBench, CC BY-NC 4.0, HuggingFace Maxscha/commitbench), Training Procedure (LoRA r=16, Qwen2.5-Coder-1.5B-Instruct base, SFTTrainer, 2 epochs, SEQ_LEN=768), Evaluation Results (table from results.md), Framework versions (already correct: PEFT 0.21.0), Environmental Impact (Kaggle T4, ~2h), Citation (CommitBench paper ref from README).",
+    "Step 4 — Update hf_model_card/README.md with the same content as commit-model-lora/README.md (they serve the same purpose; keep them in sync).",
+    "Step 5 — Update README.md. Add a 'Evaluation' section or extend the existing one with: (a) how to run the new evaluate_commitsuite.py script with example command, (b) note that evaluate.py now reports METEOR and per-type metrics, (c) brief note about the CommitSuite benchmark comparison. Keep existing content intact — only additions, no deletions."
+  ],
+  "acceptance_criteria": [
+    "scripts/evaluate_commitsuite.py exists and is syntactically valid Python",
+    "evaluate_commitsuite.py imports build_diff from commit_model.diff_utils and TYPE_RE, VALID_RE, extract_type from commit_model.diff_utils",
+    "evaluate_commitsuite.py reads from CommitSuite/CMG-eval_dataset/all_CMG.json by default",
+    "evaluate_commitsuite.py has --limit and --dataset-path arguments",
+    "commit-model-lora/README.md contains no remaining 'More Information Needed' strings",
+    "commit-model-lora/README.md contains the evaluation results table from results.md",
+    "hf_model_card/README.md is consistent with commit-model-lora/README.md",
+    "README.md mentions evaluate_commitsuite.py"
+  ],
+  "verification": [
+    "python -c \"import ast; ast.parse(open('scripts/evaluate_commitsuite.py').read()); print('syntax OK')\"",
+    "python -c \"import sys; sys.path.insert(0,'src'); from commit_model.diff_utils import build_diff, TYPE_RE, VALID_RE, extract_type; print('imports OK')\"",
+    "python -m unittest tests.test_postprocess  (must still pass)",
+    "python -c \"txt=open('commit-model-lora/README.md').read(); assert 'More Information Needed' not in txt, 'Found placeholder!'; print('model card OK')\""
+  ],
+  "blocked_reason": null,
+  "findings": ""
+}

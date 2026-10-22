@@ -97,7 +97,7 @@ picks `build`, `ci`, `perf` or `style`. Full results, per-type accuracy and the 
 | [`notebooks/`](notebooks/) | the pipeline, in order: `CommitBench_filter` → `fine-tuning_Kaggle` → `evaluate_Kaggle` → `merge_adapter_Kaggle` → `quantize_gguf_Kaggle` → `evaluate_quantized_Kaggle` |
 | [`vscode-extension/`](vscode-extension/) | Offhand (TypeScript) and its unit and integration tests |
 | [`src/commit_model/`](src/commit_model/) | Beemo: CLI, engine, prompt building and cleanup (Python) |
-| [`scripts/`](scripts/) | git hook installer, evaluation scripts |
+| [`scripts/`](scripts/) | git hook installer; `evaluate.py` (adapter), `evaluate_ollama.py` (GGUF via Ollama), `evaluate_commitsuite.py` (CommitSuite CMG benchmark) |
 | [`hf_model_card/`](hf_model_card/) | the model card for Hugging Face |
 | [`Icon+banner/`](Icon+banner/) | logo and banner |
 | [`results.md`](results.md), [`MVP.md`](MVP.md), [`plan.md`](plan.md) | results, extension design and tests, roadmap |
@@ -105,6 +105,39 @@ picks `build`, `ci`, `perf` or `style`. Full results, per-type accuracy and the 
 The prompt rules (diff filtering, truncation to 768 tokens, cleanup) exist in TypeScript
 (`vscode-extension/src/prompt.ts`), Python (`src/commit_model/diff_utils.py`) and the filter notebook,
 and must stay identical: the model expects prompts shaped exactly like its training data.
+
+## Evaluation
+
+The evaluation scripts live in [`scripts/`](scripts/) and all share the same prompt template and
+diff-filtering logic as training (`src/commit_model/diff_utils.py`).
+
+**CommitBench test split** (9,704 held-out examples, requires the LoRA adapter or Ollama):
+
+```bash
+# With the 4-bit GGUF via Ollama (no GPU required):
+python scripts/evaluate_ollama.py --limit 200
+
+# With the LoRA adapter via BitsAndBytes (GPU required):
+python scripts/evaluate.py --no-adapter --test-file data/processed/test.jsonl --limit 200
+```
+
+Both scripts now report: valid-format rate, type accuracy, BLEU (sacrebleu), ROUGE-L, METEOR,
+per-type accuracy breakdown, per-type precision/recall/F1, and a confusion-matrix PNG
+(`type_confusion_matrix.png`). When run without `--no-adapter`, a McNemar significance test
+compares the base model against the fine-tuned adapter.
+
+**CommitSuite CMG benchmark** (1,000 examples from `CommitSuite/CMG-eval_dataset/all_CMG.json`):
+
+```bash
+# Requires Ollama running with the commit-model:
+#   ollama run commit-model
+python scripts/evaluate_commitsuite.py --limit 10   # smoke test
+python scripts/evaluate_commitsuite.py              # full benchmark
+```
+
+This script runs the model on CommitSuite's curated 1,000-commit dataset (7 languages) and reports
+the same metrics, enabling direct comparison with other CMG tools evaluated on CommitSuite.
+Predictions are saved to `preds_commitsuite.jsonl`.
 
 ## Development
 

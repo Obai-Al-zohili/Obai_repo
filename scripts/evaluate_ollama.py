@@ -10,8 +10,6 @@ Usage:
 """
 import argparse
 import json
-import math
-import re
 import sys
 import time
 import urllib.request
@@ -21,28 +19,29 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
 
+# ---------------------------------------------------------------------------
+# Optional heavy imports — fail gracefully if packages not installed
+# ---------------------------------------------------------------------------
+try:
+    import nltk
+    nltk.download("wordnet", quiet=True)
+    nltk.download("omw-1.4", quiet=True)
+    from nltk.translate.meteor_score import meteor_score as _meteor_score
+    _HAS_NLTK = True
+except ImportError:
+    _HAS_NLTK = False
+
 import evaluate
 from transformers import AutoTokenizer
 
-from commit_model.diff_utils import fit_prompt
+from commit_model.diff_utils import (
+    VALID_RE,
+    extract_type,
+    fit_prompt,
+    mcnemar_p,
+)
 
-TYPE_RE = re.compile(r"^(\w+)(\(.+?\))?!?:")
-VALID_RE = re.compile(r"^(feat|fix|refactor|chore|docs|test|perf|style|build|ci)(\([\w./-]+\))?!?:\s+\S")
 MAX_NEW_TOKENS = 40
-
-
-def extract_type(message: str) -> str | None:
-    match = TYPE_RE.match(message.strip())
-    return match.group(1) if match else None
-
-
-def mcnemar_p(only_a: int, only_b: int) -> float:
-    """Exact two-sided McNemar test: binomial test of the discordant pairs at p = 0.5."""
-    n = only_a + only_b
-    if n == 0:
-        return 1.0
-    probs = [math.comb(n, i) * 0.5**n for i in range(n + 1)]
-    return min(1.0, sum(p for p in probs if p <= probs[only_a] + 1e-12))
 
 
 def main():
@@ -95,11 +94,19 @@ def main():
     ref_types = [extract_type(r) for r in refs]
 
     def score(p):
+        meteor_val = None
+        if _HAS_NLTK:
+            meteor_scores = [
+                _meteor_score([r.lower().split()], pred.lower().split())
+                for pred, r in zip(p, refs)
+            ]
+            meteor_val = sum(meteor_scores) / len(meteor_scores)
         return {
             "valid_format": sum(bool(VALID_RE.match(x)) for x in p) / len(p),
             "type_acc": sum(extract_type(x) == t for x, t in zip(p, ref_types)) / len(p),
             "BLEU": bleu.compute(predictions=p, references=[[r] for r in refs])["score"],
             "ROUGE-L": rouge.compute(predictions=p, references=refs)["rougeL"],
+            "METEOR": meteor_val,
         }
 
     rows = {f"ollama ({args.model})": score(preds)}
@@ -112,9 +119,10 @@ def main():
         rows = {"fp32": score(fp32_preds), **rows}
 
     print(f"\nExamples: {len(examples)}\n")
-    print(f"  {'':<28}{'valid format':>14}{'type acc':>10}{'BLEU':>8}{'ROUGE-L':>9}")
+    print(f"  {'':<28}{'valid format':>14}{'type acc':>10}{'BLEU':>8}{'ROUGE-L':>9}{'METEOR':>9}")
     for name, s in rows.items():
-        print(f"  {name:<28}{s['valid_format']:>14.1%}{s['type_acc']:>10.1%}{s['BLEU']:>8.2f}{s['ROUGE-L']:>9.3f}")
+        meteor_str = f"{s['METEOR']:>9.3f}" if s["METEOR"] is not None else f"{'n/a':>9}"
+        print(f"  {name:<28}{s['valid_format']:>14.1%}{s['type_acc']:>10.1%}{s['BLEU']:>8.2f}{s['ROUGE-L']:>9.3f}{meteor_str}")
 
     print("\nType accuracy by type:")
     for t, n in Counter(ref_types).most_common():

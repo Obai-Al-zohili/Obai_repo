@@ -4,6 +4,7 @@ Keeping this in one place matters: the model is trained on diffs shaped by this
 policy, so inference must shape live diffs the same way or the prompt distribution
 will drift from what the model saw during fine-tuning.
 """
+import math
 import re
 
 CONVENTIONAL_PREFIX = re.compile(
@@ -91,3 +92,32 @@ def build_diff(diff: str) -> str | None:
     if truncated is None or len(truncated.strip()) < 20:
         return None
     return truncated
+
+
+# ---------------------------------------------------------------------------
+# Commit-type classification helpers (shared by evaluate.py and evaluate_ollama.py)
+# ---------------------------------------------------------------------------
+
+# Matches any conventional-style type prefix, e.g. "feat:", "fix(scope)!:"
+TYPE_RE = re.compile(r"^(\w+)(\(.+?\))?!?:")
+
+# Strict Conventional Commits format — type must be one of the ten known labels
+VALID_RE = re.compile(
+    r"^(feat|fix|refactor|chore|docs|test|perf|style|build|ci)"
+    r"(\([\w./-]+\))?!?:\s+\S"
+)
+
+
+def extract_type(message: str) -> str | None:
+    """Return the type prefix (e.g. 'feat') from a Conventional Commits message, or None."""
+    match = TYPE_RE.match(message.strip())
+    return match.group(1) if match else None
+
+
+def mcnemar_p(only_a: int, only_b: int) -> float:
+    """Exact two-sided McNemar test: binomial test of the discordant pairs at p = 0.5."""
+    n = only_a + only_b
+    if n == 0:
+        return 1.0
+    probs = [math.comb(n, i) * 0.5**n for i in range(n + 1)]
+    return min(1.0, sum(p for p in probs if p <= probs[only_a] + 1e-12))
