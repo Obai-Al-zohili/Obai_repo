@@ -1,10 +1,7 @@
 .venv/
 __pycache__/
 *.pyc
-data/raw/
-# Only the test split is tracked: CI's smoke test runs examples from it.
-data/processed/*
-!data/processed/test.jsonl
+data/
 checkpoints/
 *.safetensors
 *.bin
