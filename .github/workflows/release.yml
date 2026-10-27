@@ -32,7 +32,7 @@ jobs:
       - run: npm run test:unit # compiles first
       - run: python -m unittest tests.test_postprocess
         working-directory: .
-      - run: npx vsce package --out offhand.vsix
+      - run: npx vsce package --out commit-model.vsix
 
   publish:
     needs: check
@@ -56,12 +56,12 @@ jobs:
           fi
       - run: npm ci
       - run: npm run compile
-      - run: npx vsce package --out offhand.vsix
+      - run: npx vsce package --out commit-model.vsix
       - name: Publish to the VS Code Marketplace
-        run: npx vsce publish --packagePath offhand.vsix
+        run: npx vsce publish --packagePath commit-model.vsix
         env:
           VSCE_PAT: ${{ secrets.VSCE_PAT }}
       - uses: actions/upload-artifact@v4
         with:
-          name: offhand-${{ github.ref_name }}
-          path: vscode-extension/offhand.vsix
+          name: commit-model-${{ github.ref_name }}
+          path: vscode-extension/commit-model.vsix

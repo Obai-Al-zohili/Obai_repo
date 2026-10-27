@@ -16,14 +16,14 @@ tags:
   - lora
 ---
 
-# Commit Model (4-bit GGUF)
+# AI Commit Message Generator (4-bit GGUF)
 
 Writes a [Conventional Commits](https://www.conventionalcommits.org) subject line (`feat:`,
 `fix(scope):`, `docs:` ...) from a staged `git diff`. Small enough to run locally: 986 MB, about 1 GB of
 memory, on a GPU or CPU.
 
-Used by the **Offhand** VS Code extension, which suggests a message after `git add` in the terminal
-and commits it on **Y**. Source and training pipeline: https://github.com/AhmedJesserLahmer/commit-model
+Used by the VS Code extension in this project, which suggests a message after `git add` in the terminal
+and commits it on **Y**. Source and training pipeline: [github.com/Obai-Al-zohili/Obai_repo](https://github.com/Obai-Al-zohili/Obai_repo)
 
 ## Files
 
@@ -36,7 +36,7 @@ and commits it on **Y**. Source and training pipeline: https://github.com/AhmedJ
 
 - **Base model:** Qwen2.5-Coder-1.5B-Instruct
 - **Data:** CommitBench, filtered to messages in Conventional Commits form, without lockfiles or
-  generated files: 45,619 training examples
+  generated files: ~45 000 training examples
 - **Fine-tuning:** LoRA (rank 16) on the commit message only, 2 epochs, prompts up to 768 tokens
 - **Merged** into the base model, then **quantized** to Q4_K_M with llama.cpp
 
@@ -56,7 +56,7 @@ Truncate the **diff**, never the end of the prompt: the model needs the final `C
 
 ## Results
 
-On 9,704 held-out CommitBench commits (full-precision model):
+On 9 704 held-out CommitBench commits (full-precision model):
 
 | | Base Qwen | Fine-tuned | Always `fix:` |
 |---|---|---|---|
@@ -79,9 +79,13 @@ matrix. Run `python scripts/evaluate_ollama.py --limit 200` with Ollama to repro
 - Biased toward `fix`, which is over half of the training data.
 - Subject line only, no message body.
 - CommitBench replaced numbers with `<I>`, so the model sometimes writes `(#<I>)`; strip it in
-  post-processing (the extension does).
+  post-processing (the CLI does this automatically).
 
 ## License
 
 **CC BY-NC 4.0** (non-commercial), following the training data, CommitBench (CC BY-NC 4.0). The base
 model, Qwen2.5-Coder-1.5B-Instruct, is Apache 2.0.
+
+## Author
+
+Obai Al-zohili — university senior project, 2025–2026.

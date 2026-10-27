@@ -31,10 +31,10 @@ jobs:
           python-version: "3.12"
       - run: npm ci
       - run: npm run compile # the package has no vscode:prepublish script, so compile first
-      - run: npx vsce package --out offhand.vsix
+      - run: npx vsce package --out commit-model.vsix
       - name: Check the package contents
         run: |
-          python -m zipfile -l offhand.vsix | tee contents.txt
+          python -m zipfile -l commit-model.vsix | tee contents.txt
           status=0
           for source in src/*.ts; do
             compiled="extension/dist/$(basename "$source" .ts).js"
@@ -51,5 +51,5 @@ jobs:
       - uses: actions/upload-artifact@v4
         if: matrix.os == 'ubuntu-latest'
         with:
-          name: offhand-vsix
-          path: vscode-extension/offhand.vsix
+          name: commit-model-vsix
+          path: vscode-extension/commit-model.vsix

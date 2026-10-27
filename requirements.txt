@@ -1,5 +1,5 @@
 # ============================================================
-# OffHand / Beemo — requirements.txt
+# AI Commit Message Generator — requirements.txt
 # Generated 2026-10-22
 #
 # Install:

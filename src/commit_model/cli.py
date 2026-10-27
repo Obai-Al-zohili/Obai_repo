@@ -1,7 +1,7 @@
-"""Beemo, the command-line tool: reads `git diff --staged`, generates a Conventional Commits message.
+"""AI commit message generator — reads `git diff --staged`, generates a Conventional Commits message.
 
-Runs the 4-bit model in llama.cpp's llama-server (same engine as the VS Code extension). The engine
-and, unless a local model is given, the model are downloaded once into ~/.cache/beemo.
+Runs the 4-bit model in llama.cpp's llama-server. The engine and model are downloaded
+once into ~/.cache/beemo on first use.
 
 Usage:
     beemo                                         # print a suggestion for the staged diff
@@ -19,7 +19,7 @@ from pathlib import Path
 from commit_model.diff_utils import build_diff
 from commit_model.engine import DEFAULT_CACHE_DIR, Engine
 
-DEFAULT_MODEL_URI = "hf:Jess2005/commit-model-CLI/commit-model-Q4_K_M.gguf"
+DEFAULT_MODEL_URI = "hf:Obai-Al-zohili/commit-model/commit-model-Q4_K_M.gguf"
 
 
 def get_staged_diff() -> str:

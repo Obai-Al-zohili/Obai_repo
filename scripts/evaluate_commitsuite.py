@@ -1,7 +1,7 @@
-"""Evaluate OffHand's commit-model on CommitSuite's CMG evaluation dataset.
+"""Evaluate the commit model on CommitSuite's CMG evaluation dataset.
 
 CommitSuite ships 1,000 human-curated commits across 7 languages.  Running
-OffHand's model on this benchmark allows direct comparison with other CMG tools
+the model on this benchmark allows direct comparison with other CMG tools
 that have reported results on the same dataset.
 
 The script reconstructs unified diffs from CommitSuite's per-file hunk records,
@@ -227,7 +227,7 @@ def main():
     if not dataset_path.exists():
         sys.exit(
             f"Dataset not found: {dataset_path}\n"
-            "Make sure CommitSuite is cloned inside the OffHand workspace."
+            "Make sure CommitSuite is cloned inside the project workspace."
         )
     entries = json.loads(dataset_path.read_text(encoding="utf-8"))
     if args.limit:

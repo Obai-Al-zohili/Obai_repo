@@ -1,117 +1,75 @@
-<p align="center">
-  <img src="Icon+banner/offhand-banner.png" alt="Offhand: free, lightweight commit model; your data stays local and private" width="100%">
-</p>
+# AI Commit Message Generator
 
-<p align="center">
-  <a href="https://marketplace.visualstudio.com/items?itemName=JesserLahmer.offhand"><img alt="VS Code Marketplace" src="https://img.shields.io/badge/VS%20Code-Marketplace-B8323F"></a>
-  <a href="https://huggingface.co/Jess2005/commit-model-CLI"><img alt="Model on Hugging Face" src="https://img.shields.io/badge/model-Hugging%20Face-3A0F14"></a>
-  <img alt="Runs offline" src="https://img.shields.io/badge/runs-100%25%20local-F4F1EA?labelColor=3A0F14">
-</p>
-
-# Offhand
-
-**AI commit messages that never leave your machine.** Stage your changes and a small fine-tuned model
-suggests a [Conventional Commits](https://www.conventionalcommits.org) message right in VS Code's
-terminal. Type **Y** and it's committed.
+**Automatic commit messages that never leave your machine.** Stage your changes and a small fine-tuned model suggests a [Conventional Commits](https://www.conventionalcommits.org) message right in VS Code's terminal. Type **Y** and it's committed.
 
 ```
 $ git add .
-Offhand suggests:  feat: add subtract function
+Suggests:  feat: add subtract function
 Commit with this message? [Y/N] y
 ✓ Committed 3f2a1bc  feat: add subtract function
 ```
 
-Free, no account, no API key, no cloud: the model runs on your own GPU or CPU.
+Free, no account, no API key, no cloud — the model runs on your own GPU or CPU.
 
-This repository holds everything behind it, from the training data to the published extension:
+## What's in this repo
 
 | | What | Where |
 |---|---|---|
-| <img src="Icon+banner/offhand-128.png" width="20"> **Offhand** | VS Code extension: suggestion after `git add`, Y/N, commit | [Marketplace](https://marketplace.visualstudio.com/items?itemName=JesserLahmer.offhand) · [`vscode-extension/`](vscode-extension/) |
-| **Beemo** | the same model as a command-line tool, for any terminal | [`src/commit_model/`](src/commit_model/) |
-| **The model** | Qwen2.5-Coder-1.5B fine-tuned with LoRA, 4-bit GGUF (986 MB) | [Hugging Face](https://huggingface.co/Jess2005/commit-model-CLI) |
+| **VS Code extension** | Suggestion after `git add`, Y/N, commit | [`vscode-extension/`](vscode-extension/) |
+| **CLI tool (Beemo)** | Same model as a command-line tool for any terminal | [`src/commit_model/`](src/commit_model/) |
+| **The model** | Qwen2.5-Coder-1.5B fine-tuned with LoRA, 4-bit GGUF (986 MB) | [`commit-model-lora/`](commit-model-lora/) |
 
 ## Get started
 
-### Offhand (VS Code)
+### VS Code extension
 
-1. Install **Offhand** from the Extensions view (search "Offhand") or the
-   [Marketplace](https://marketplace.visualstudio.com/items?itemName=JesserLahmer.offhand).
-2. Click **Offhand: Off** in the status bar to turn it on. The first time, it downloads the engine
-   and the model (about 1 GB, once).
-3. Open a **new** terminal in VS Code, save your changes and run `git add .`.
-
-Works in bash, zsh, Git Bash, PowerShell and Command Prompt. Uses the GPU when available (NVIDIA, AMD,
-Intel, Apple Silicon), the CPU otherwise. Details in the [extension's README](vscode-extension/README.md).
+1. Open `vscode-extension/` and run `npm install && npm run compile`.
+2. Press **F5** to launch the extension in a development VS Code window.
+3. Click the toggle in the status bar to turn it on.
+4. Open a **new** terminal, save your changes, and run `git add .`.
 
 ### Beemo (command line)
 
 ```bash
-uv venv --python 3.12 .venv && source .venv/bin/activate
-uv pip install -e .
+python -m venv .venv && source .venv/bin/activate   # Windows: .venv\Scripts\activate
+pip install -e .
 
 git add .
 beemo                                   # prints a suggested message
-scripts/install_hook.sh . <model.gguf>  # or pre-fill `git commit` through a git hook
+scripts/install_hook.sh . <model.gguf>  # or pre-fill git commit through a git hook
 ```
 
-Beemo downloads the same engine and model on first use (into `~/.cache/beemo`); `--model-path` or
-`BEEMO_MODEL_PATH` uses a local `.gguf` instead.
+`--model-path` or `BEEMO_MODEL_PATH` points to a local `.gguf` file.
 
 ## How it works
 
 ```
 CommitBench (real GitHub commits)
-  → filter: Conventional Commits messages only, no lockfiles or generated files   45,619 examples
-  → fine-tune Qwen2.5-Coder-1.5B-Instruct with LoRA (Kaggle, 2× T4)
-  → evaluate on 9,704 held-out commits against the base model and a majority baseline
+  → filter: Conventional Commits messages only, no lockfiles or generated files   ~45 000 examples
+  → fine-tune Qwen2.5-Coder-1.5B-Instruct with LoRA (Kaggle, 2× T4, 2 epochs)
+  → evaluate on 9 704 held-out commits against the base model and a majority baseline
   → merge the adapter, quantize to 4-bit GGUF with llama.cpp (no measurable quality loss)
-  → publish on Hugging Face
-  → Offhand / Beemo: llama.cpp's llama-server runs it locally
+  → VS Code extension / CLI: llama.cpp's llama-server runs it locally
 ```
-
-The extension is 40 KB: on first start it downloads the llama.cpp build that fits the user's system
-(CUDA/Vulkan/Metal/CPU) and the model, then runs the server in the background, stopping it with
-VS Code (even after a crash). A small `git` wrapper in VS Code's terminals asks the model after each
-successful `git add`; nothing else changes.
 
 ## Results
 
-On 9,704 held-out commits:
+On 9 704 held-out CommitBench commits:
 
-| | Base Qwen | **Fine-tuned** | Always `fix:` |
+| | Base Qwen | **Fine-tuned** | Always `fix:` baseline |
 |---|---|---|---|
-| Valid Conventional Commits format | 1.9% | **99.9%** | |
+| Valid Conventional Commits format | 1.9% | **99.9%** | — |
 | Right commit type | 0.9% | **67.3%** | 53.3% |
-| BLEU | 0.5 | **19.4** | |
-| ROUGE-L | 0.022 | **0.328** | |
+| BLEU | 0.5 | **19.4** | — |
+| ROUGE-L | 0.022 | **0.328** | — |
 
-Strong on `fix`, `docs` and `test`. It leans toward `fix` (over half of the training data) and rarely
-picks `build`, `ci`, `perf` or `style`. Full results, per-type accuracy and the 4-bit check:
-[`results.md`](results.md).
-
-## Repository
-
-| Path | |
-|---|---|
-| [`notebooks/`](notebooks/) | the pipeline, in order: `CommitBench_filter` → `fine-tuning_Kaggle` → `evaluate_Kaggle` → `merge_adapter_Kaggle` → `quantize_gguf_Kaggle` → `evaluate_quantized_Kaggle` |
-| [`vscode-extension/`](vscode-extension/) | Offhand (TypeScript) and its unit and integration tests |
-| [`src/commit_model/`](src/commit_model/) | Beemo: CLI, engine, prompt building and cleanup (Python) |
-| [`scripts/`](scripts/) | git hook installer; `evaluate.py` (adapter), `evaluate_ollama.py` (GGUF via Ollama), `evaluate_commitsuite.py` (CommitSuite CMG benchmark) |
-| [`hf_model_card/`](hf_model_card/) | the model card for Hugging Face |
-| [`Icon+banner/`](Icon+banner/) | logo and banner |
-| [`results.md`](results.md), [`MVP.md`](MVP.md), [`plan.md`](plan.md) | results, extension design and tests, roadmap |
-
-The prompt rules (diff filtering, truncation to 768 tokens, cleanup) exist in TypeScript
-(`vscode-extension/src/prompt.ts`), Python (`src/commit_model/diff_utils.py`) and the filter notebook,
-and must stay identical: the model expects prompts shaped exactly like its training data.
+Strong on `fix`, `docs` and `test`. The model leans toward `fix` (over half of the training data) and rarely picks `build`, `ci`, `perf` or `style`. Full results and per-type accuracy: [`results.md`](results.md).
 
 ## Evaluation
 
-The evaluation scripts live in [`scripts/`](scripts/) and all share the same prompt template and
-diff-filtering logic as training (`src/commit_model/diff_utils.py`).
+All evaluation scripts share the same prompt template and diff-filtering logic as training (`src/commit_model/diff_utils.py`).
 
-**CommitBench test split** (9,704 held-out examples, requires the LoRA adapter or Ollama):
+**CommitBench test split** (9 704 held-out examples):
 
 ```bash
 # With the 4-bit GGUF via Ollama (no GPU required):
@@ -121,43 +79,43 @@ python scripts/evaluate_ollama.py --limit 200
 python scripts/evaluate.py --no-adapter --test-file data/processed/test.jsonl --limit 200
 ```
 
-Both scripts now report: valid-format rate, type accuracy, BLEU (sacrebleu), ROUGE-L, METEOR,
-per-type accuracy breakdown, per-type precision/recall/F1, and a confusion-matrix PNG
-(`type_confusion_matrix.png`). When run without `--no-adapter`, a McNemar significance test
-compares the base model against the fine-tuned adapter.
+Both scripts report: valid-format rate, type accuracy, BLEU, ROUGE-L, METEOR, per-type precision/recall/F1, confusion-matrix PNG, and a McNemar significance test.
 
-**CommitSuite CMG benchmark** (1,000 examples from `CommitSuite/CMG-eval_dataset/all_CMG.json`):
+**CommitSuite CMG benchmark** (1 000 curated examples across 7 languages):
 
 ```bash
-# Requires Ollama running with the commit-model:
-#   ollama run commit-model
+# Requires Ollama running with the model loaded
 python scripts/evaluate_commitsuite.py --limit 10   # smoke test
 python scripts/evaluate_commitsuite.py              # full benchmark
 ```
 
-This script runs the model on CommitSuite's curated 1,000-commit dataset (7 languages) and reports
-the same metrics, enabling direct comparison with other CMG tools evaluated on CommitSuite.
-Predictions are saved to `preds_commitsuite.jsonl`.
+## Repository layout
+
+| Path | |
+|---|---|
+| [`notebooks/`](notebooks/) | Pipeline: `CommitBench_filter` → `fine-tuning_Kaggle` → `evaluate_Kaggle` → `merge_adapter_Kaggle` → `quantize_gguf_Kaggle` → `evaluate_quantized_Kaggle` |
+| [`vscode-extension/`](vscode-extension/) | VS Code extension (TypeScript) and its unit and integration tests |
+| [`src/commit_model/`](src/commit_model/) | CLI, engine, prompt building, and cleanup (Python) |
+| [`scripts/`](scripts/) | `evaluate.py`, `evaluate_ollama.py`, `evaluate_commitsuite.py`, `install_hook.sh` |
+| [`commit-model-lora/`](commit-model-lora/) | LoRA adapter weights and model card |
+| [`hf_model_card/`](hf_model_card/) | Model card for the quantized GGUF |
+| [`results.md`](results.md), [`plan.md`](plan.md) | Evaluation results and project roadmap |
 
 ## Development
 
 ```bash
 # Extension
 cd vscode-extension && npm install && npm run compile
-npm run test:unit                  # suggestion cleanup
-npm run test:integration           # the whole workflow inside a real VS Code
-# F5 in vscode-extension/ runs it in a development window
+npm run test:unit          # cleanup unit tests
+npm run test:integration   # full workflow in a real VS Code window
 
 # Python
 python -m unittest tests.test_postprocess
 ```
 
-## Licenses and credits
+## Licenses
 
-- Extension code: MIT ([`vscode-extension/LICENSE`](vscode-extension/LICENSE)).
-- The model: **CC BY-NC 4.0** (non-commercial), following its training data, **CommitBench**
-  (Maximilian Schall et al., CC BY-NC 4.0). Base model **Qwen2.5-Coder-1.5B-Instruct** (Alibaba Cloud,
-  Apache 2.0).
-- Engine: **llama.cpp** (MIT).
-
-See [`vscode-extension/NOTICE.md`](vscode-extension/NOTICE.md).
+- Extension code: MIT ([`vscode-extension/LICENSE`](vscode-extension/LICENSE))
+- The model weights: **CC BY-NC 4.0** (non-commercial), inherited from training data **CommitBench** (Maximilian Schall et al., CC BY-NC 4.0)
+- Base model **Qwen2.5-Coder-1.5B-Instruct**: Apache 2.0 (Alibaba Cloud)
+- Inference engine **llama.cpp**: MIT

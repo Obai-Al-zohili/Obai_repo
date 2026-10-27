@@ -1,7 +1,0 @@
-{
-  "task_id": "task-commitsuite-integration",
-  "task_description": "Integrate useful missing functionality from CommitSuite into OffHand: METEOR metric, per-type classification metrics (precision/recall/F1, confusion matrix), evaluation script parity (valid-format rate, McNemar test, per-type breakdown), training data deduplication and class rebalancing, placeholder cleaning in training messages, CommitSuite CMG evaluation script, filled model card, and README updates.",
-  "status": "pending",
-  "feature_order": ["FEAT-001", "FEAT-002", "FEAT-003"],
-  "blocked_reason": null
-}

@@ -1,8 +1,9 @@
 [project]
 name = "beemo"
 version = "0.1.0"
-description = "Small local fine-tuned model that writes commit messages from staged diffs"
-requires-python = ">=3.12,<3.13"
+description = "AI commit message generator — fine-tuned LLM that writes Conventional Commits messages from staged diffs"
+authors = [{name = "Obai Al-zohili", email = "obaizohili2004@gmail.com"}]
+requires-python = ">=3.11"
 dependencies = [
     "transformers>=4.46",
     "peft>=0.13",
