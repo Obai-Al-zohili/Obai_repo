@@ -56,17 +56,25 @@ from commit_model.diff_utils import (
 )
 
 DEFAULT_BASE_MODEL = "Qwen/Qwen2.5-Coder-1.5B-Instruct"
-DEFAULT_ADAPTER_PATH = "checkpoints/commit-model-lora"
+# Correct path relative to project root — adapter lives in commit-model-lora/
+DEFAULT_ADAPTER_PATH = "commit-model-lora"
 
 # Ordered by test-set frequency from results.md
 LABELS = ["fix", "feat", "chore", "test", "refactor", "docs", "build", "style", "perf", "ci"]
 
 
 def load_model(base_model: str, adapter_path: str | None):
-    """Base model in 4-bit, plus the LoRA adapter unless adapter_path is None."""
+    """Base model in 4-bit, plus the LoRA adapter unless adapter_path is None.
+
+    NOTE: tokenizer is always loaded from base_model, not adapter_path.
+    The adapter directory's tokenizer_config.json uses a newer format
+    (extra_special_tokens as list) that transformers 4.57.3 cannot parse.
+    Loading from the base model name is safe — the tokenizer is identical.
+    """
     tokenizer = AutoTokenizer.from_pretrained(base_model)
     if tokenizer.pad_token is None:
         tokenizer.pad_token = tokenizer.eos_token
+    tokenizer.padding_side = "left"
 
     bnb_config = BitsAndBytesConfig(
         load_in_4bit=True,
@@ -78,21 +86,38 @@ def load_model(base_model: str, adapter_path: str | None):
         base_model, quantization_config=bnb_config, device_map="auto"
     )
     if adapter_path:
+        adapter_path = str(Path(adapter_path).resolve())
+        if not (Path(adapter_path) / "adapter_model.safetensors").exists():
+            raise FileNotFoundError(
+                f"LoRA weights not found at {adapter_path}/adapter_model.safetensors\n"
+                "The adapter config is present but the trained weights are missing.\n"
+                "Extract adapter_model.safetensors from new_weights_to_add_to_frozen_weights/"
+                "commit-model-lora.zip and place it in commit-model-lora/."
+            )
         model = PeftModel.from_pretrained(model, adapter_path)
+        # Confirm LoRA weights actually loaded — guard against silent base-only load
+        lora_params = [n for n, _ in model.named_parameters() if "lora_" in n]
+        if not lora_params:
+            raise RuntimeError(
+                "PeftModel.from_pretrained completed but no lora_ parameters found. "
+                "The model loaded as base-only. Check the adapter_config.json peft_type."
+            )
+        print(f"LoRA adapter loaded: {len(lora_params)} LoRA parameter tensors confirmed.")
     model.eval()
     return model, tokenizer
 
 
 def generate_message(model, tokenizer, prompt: str, max_new_tokens: int = 40) -> str:
-    inputs = tokenizer(prompt, return_tensors="pt").to(model.device)
+    # With device_map="auto" the model spans devices; use the first parameter's device
+    device = next(model.parameters()).device
+    inputs = tokenizer(prompt, return_tensors="pt", truncation=True, max_length=768).to(device)
     with torch.no_grad():
         output = model.generate(
             **inputs,
             max_new_tokens=max_new_tokens,
             do_sample=False,
-            temperature=None,
-            top_p=None,
             pad_token_id=tokenizer.pad_token_id,
+            eos_token_id=tokenizer.eos_token_id,
         )
     text = tokenizer.decode(output[0][inputs["input_ids"].shape[1]:], skip_special_tokens=True)
     return (text.strip().splitlines() or [""])[0].strip()

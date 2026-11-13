@@ -22,6 +22,16 @@ sentencepiece               # tokenizer backend for some models
 # ------------------------------------------------------------------
 # Training / fine-tuning  (fine-tuning_Kaggle.ipynb)
 # ------------------------------------------------------------------
+
+torch==2.5.1
+transformers==4.48.3
+peft==0.14.0
+evaluate==0.4.3
+sacrebleu==2.5.1
+rouge_score==0.1.2
+pandas==2.2.3
+accelerate==1.2.1
+
 trl>=0.11                   # SFTTrainer
 datasets>=3.0               # CommitBench dataset loading (load_dataset)
 tqdm                        # progress bars in filter notebook
