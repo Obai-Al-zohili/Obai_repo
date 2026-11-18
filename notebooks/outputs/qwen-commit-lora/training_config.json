@@ -1,0 +1,10 @@
+{
+    "base_model": "Qwen/Qwen2.5-Coder-3B-Instruct",
+    "best_validation_loss": 2.7843383637070658,
+    "epoch": 2,
+    "learning_rate": 0.0002,
+    "lora_r": 8,
+    "lora_alpha": 16,
+    "max_input_length": 512,
+    "max_target_length": 128
+}
