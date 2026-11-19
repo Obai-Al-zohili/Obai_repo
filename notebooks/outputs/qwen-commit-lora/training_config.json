@@ -1,10 +1,17 @@
 {
     "base_model": "Qwen/Qwen2.5-Coder-3B-Instruct",
-    "best_validation_loss": 2.7843383637070658,
-    "epoch": 2,
-    "learning_rate": 0.0002,
-    "lora_r": 8,
-    "lora_alpha": 16,
+    "best_epoch": 2,
+    "best_validation_rougeL": 0.24236023846267676,
+    "best_validation_loss": 2.7705531597013273,
+    "best_validation_perplexity": 15.967464125023273,
+    "validation_bleu": 3.2566680820040372,
+    "validation_rouge1": 0.273515646738605,
+    "validation_rouge2": 0.07085487972896516,
+    "validation_rougeL": 0.24236023846267676,
+    "validation_meteor": 0.12995330776325142,
+    "learning_rate": 5e-05,
+    "lora_r": 16,
+    "lora_alpha": 32,
     "max_input_length": 512,
-    "max_target_length": 128
+    "max_target_length": 192
 }
